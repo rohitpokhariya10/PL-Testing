@@ -38,6 +38,16 @@ describe('server environment configuration', () => {
     for (const timeout of ['NaN', '999', '180001', 'Infinity']) expect(() => readConfig({ AI_TIMEOUT_MS: timeout })).toThrow('AI_TIMEOUT_MS');
     for (const hops of ['NaN', '-1', '3', '1.5']) expect(() => readConfig({ TRUST_PROXY_HOPS: hops })).toThrow('TRUST_PROXY_HOPS');
   });
+  it('asks for no sign-in, even with the retired FRAMEFLOW_ACCESS_PASSWORD still set in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production'); vi.stubEnv('FRAMEFLOW_ACCESS_PASSWORD', 'old-render-secret');
+    try {
+      const { url, generate } = await start();
+      for (const response of [await fetch(`${url}/`), await generate()]) {
+        expect(response.status).not.toBe(401);
+        expect(response.headers.get('www-authenticate')).toBeNull();
+      }
+    } finally { vi.unstubAllEnvs(); }
+  });
 });
 
 describe('AI HTTP API (provider mocked; no live calls)', () => {

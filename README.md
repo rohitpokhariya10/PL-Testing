@@ -478,7 +478,7 @@ The repository's commands support this layout from the repository root. **[docs/
 | Frontend API base | Relative `/api` |
 | Node version | 22 (`.nvmrc`) |
 | Instance type | Free: no persistent disk, so saved files are temporary |
-| Access | `FRAMEFLOW_ACCESS_PASSWORD` (required before adding AI keys) |
+| Access | Open: no sign-in, so anyone with the address can use it |
 
 The current same-origin setup does **not** require `VITE_API_BASE_URL`; leave it unset so the built client uses `/api`. Configure provider credentials in Render's server environment, not in a frontend bundle:
 
@@ -486,7 +486,6 @@ The current same-origin setup does **not** require `VITE_API_BASE_URL`; leave it
 NODE_ENV=production
 LAYERIZE_EXPERIMENT=1
 TRUST_PROXY_HOPS=1
-FRAMEFLOW_ACCESS_PASSWORD=<secret>
 OPENAI_API_KEY=<secret>
 FAL_KEY=<secret>
 # Optional, only for the editor's older "generate artwork" feature:
@@ -497,7 +496,7 @@ FAL_KEY=<secret>
 
 For the legacy pipeline in production, use a persistent `DECOMP_DATA_DIR`, `DECOMP_AUTH_MODE=local-operator`, configured operator credentials, and a separate built worker (`npm run worker -w @frameflow/server`) sharing that storage. Production rejects development authentication and mock mode. A default single web-service deployment does not start this worker.
 
-The layerize experiment has **no user accounts**, and its origin checks are not authentication. Set `FRAMEFLOW_ACCESS_PASSWORD`: every page and API request then needs it (except `/api/health`). A production server that holds paid AI keys but no password refuses every API change, so visitors cannot start paid work. On Render Free there is no persistent disk: templates, uploads, creatives and runs are temporary and are lost on every restart, redeploy or spin-down. With a paid disk, set `FRAMEFLOW_DATA_DIR=/var/data/frameflow`.
+The layerize experiment has **no user accounts and no sign-in**, and its origin checks are not authentication: anyone who opens the address can use every feature, including paid AI work charged to the server's OpenAI and fal keys. Leave those keys unset when the service needn't run paid work, and keep spending limits on the provider accounts. On Render Free there is no persistent disk: templates, uploads, creatives and runs are temporary and are lost on every restart, redeploy or spin-down. With a paid disk, set `FRAMEFLOW_DATA_DIR=/var/data/frameflow`.
 
 ## Verification and Testing
 

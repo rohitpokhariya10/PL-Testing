@@ -9,7 +9,6 @@ import { geminiProvider } from './providers/geminiProvider.js';
 import { cloudflareImageProvider, cloudflareAdaptProvider, CLOUDFLARE_IMAGE_MODEL } from './providers/cloudflareImageProvider.js';
 import { AiError, generateArtwork, adaptArtwork, type GenerateImage, type AdaptImage } from './services/aiService.js';
 import { appOrigin } from './deployment.js';
-import { accessGate, type AccessConfig } from './access.js';
 
 export interface ServerConfig { provider: ImageProvider; accountId?: string; apiKey?: string; model: string; timeoutMs: number; clientOrigin?: string; trustProxyHops: number }
 export function readConfig(env = process.env): ServerConfig {
@@ -29,8 +28,7 @@ export function readConfig(env = process.env): ServerConfig {
   }
   return { ...common, provider, apiKey: env.GEMINI_API_KEY?.trim(), model: env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-3.1-flash-image' };
 }
-/** access: who may use a deployed server (access.ts); every page, asset and API request passes it first. */
-export function createApp(config: ServerConfig, provider?: GenerateImage, log: (event: object) => void = console.info, adaptationProvider?: AdaptImage, decompositionRouter?: Router, layerizeExperimentRouter?: Router, themePlanner?: ThemePlanner, templateStudioRouter?: Router, access?: AccessConfig) {
+export function createApp(config: ServerConfig, provider?: GenerateImage, log: (event: object) => void = console.info, adaptationProvider?: AdaptImage, decompositionRouter?: Router, layerizeExperimentRouter?: Router, themePlanner?: ThemePlanner, templateStudioRouter?: Router) {
   const app = express();
   app.disable('x-powered-by'); app.set('trust proxy', config.trustProxyHops);
   const origins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3001', 'http://127.0.0.1:3001', ...(config.clientOrigin ? [config.clientOrigin.replace(/\/$/, '')] : [])]);
@@ -38,7 +36,6 @@ export function createApp(config: ServerConfig, provider?: GenerateImage, log: (
     res.locals.requestId = randomUUID(); res.setHeader('X-Request-Id', res.locals.requestId);
     next();
   });
-  if (access) app.use(accessGate(access));
   // Static module/font requests also carry Origin; CORS policy belongs to the API.
   app.use('/api', (req, _res, next) => {
     if (req.headers.origin && !origins.has(req.headers.origin)) return next(new AiError('ORIGIN_DENIED', 'This origin is not allowed.', 403));
